@@ -1,4 +1,5 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # Prep data type and col name
 def prepData(df):
@@ -76,4 +77,68 @@ def strategyTest(df, initInv=100, fast=50, slow=200): # initInv stands for initi
             
     return backtest_log
             
+def generateMASignalGraph(df, fast=50, slow=200, size=(12, 8)):
+    df = df.copy()  # Prevent modify original DataFrame
+    generateMASignal(df, fast, slow)
+    plt.figure(figsize=size)
+
+    # Plot the lines
+    plt.plot(df["Date"], df["Close"], color="black", linewidth=0.5, label="Close")
+    plt.plot(df["Date"], df[f"MA{fast}"], color="red", linewidth=0.5, label=f"MA{fast}")
+    plt.plot(df["Date"], df[f"MA{slow}"], color="blue", linewidth=0.5, label=f"MA{slow}")
+
+    # Fill areas
+    plt.fill_between(df["Date"], df[f"MA{fast}"], df[f"MA{slow}"], where=(df[f"MA{fast}"] < df[f"MA{slow}"]), color="green", alpha=0.2, label="Bull (Up)")
+    plt.fill_between(df["Date"], df[f"MA{fast}"], df[f"MA{slow}"], where=(df[f"MA{fast}"] > df[f"MA{slow}"]), color="red", alpha=0.2, label="Bear (Down)")
+
+    # Set Position Points
+    df["Buy"] = (df[f"MA{fast}"] > df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) <= df[f"MA{slow}"].shift(1))
+    df["Sell"] = (df[f"MA{fast}"] < df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) >= df[f"MA{slow}"].shift(1))
+
+    # Plot Buy/Sell signals
+    plt.scatter(df["Date"][df["Buy"]], df["Close"][df["Buy"]], marker="^", color="green", s=50, label="Buy-Position")
+    plt.scatter(df["Date"][df["Sell"]], df["Close"][df["Sell"]], marker="v", color="red", s=50, label="Sell-Position")
+
+    plt.xlabel("Date")
+    plt.ylabel("Price ($)")
+    plt.title(f"AAPL Price with MAs MA{fast}-MA{slow}")
+    plt.legend()
+    plt.grid()
+    plt.show()
+    
+    return
+
+# Create Function
+
+def generateMulMASignalGraph(df, fast_periods=[50], slow_periods=[200], size=(12, 8)):
+    for fast in fast_periods:
+        for slow in slow_periods:
+            plt.figure(figsize=size)
             
+            df[f"MA{fast}"] = df["Close"].rolling(window=fast).mean()
+            df[f"MA{slow}"] = df["Close"].rolling(window=slow).mean()
+            
+            # Set Position points
+            df["Buy"] = (df[f"MA{fast}"] > df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) <= df[f"MA{slow}"].shift(1))
+            df["Sell"] = (df[f"MA{fast}"] < df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) >= df[f"MA{slow}"].shift(1))
+            
+            # Fill the colour between
+            plt.fill_between(df["Date"], df[f"MA{fast}"], df[f"MA{slow}"], where=(df[f"MA{fast}"] < df[f"MA{slow}"]), color="green", alpha=0.2, label="Bull (Up)")
+            plt.fill_between(df["Date"], df[f"MA{fast}"], df[f"MA{slow}"], where=(df[f"MA{fast}"] > df[f"MA{slow}"]), color="red", alpha=0.2, label="Bear (Down)")
+            
+            # Visual position point  
+            plt.scatter(df["Date"][df["Buy"]], df["Close"][df["Buy"]], marker="^", color="green", s=50, label="Buy-Position")
+            plt.scatter(df["Date"][df["Sell"]], df["Close"][df["Sell"]], marker="v", color="red", s=50, label="Sell-Position")
+            
+            plt.plot(df["Date"], df["Close"], color="black", linewidth=0.5, label="Close")
+            plt.plot(df["Date"], df[f"MA{fast}"], color="red", linewidth=0.5, label=f"MA{fast}")
+            plt.plot(df["Date"], df[f"MA{slow}"], color="blue", linewidth=0.5, label=f"MA{slow}")
+
+            plt.xlabel("Date")
+            plt.ylabel("Price ($)")
+            plt.title(f"AAPL Price with MAs MA{fast}-MA{slow}")
+            plt.legend()
+            plt.grid()
+            plt.show()
+    
+    return
