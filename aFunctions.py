@@ -29,7 +29,7 @@ def generateMASignal(df, fast=50, slow=200):
     df["Buy"] = (df[f"MA{fast}"] > df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) <= df[f"MA{slow}"].shift(1))
     df["Sell"] = (df[f"MA{fast}"] < df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) >= df[f"MA{slow}"].shift(1))
     
-    return
+    return df
 
 # Create testing function
 
@@ -79,7 +79,8 @@ def strategyTest(df, initInv=100, fast=50, slow=200): # initInv stands for initi
             
 def generateMASignalGraph(df, fast=50, slow=200, size=(12, 8)):
     df = df.copy()  # Prevent modify original DataFrame
-    generateMASignal(df, fast, slow)
+    generateMASignal(df, fast, slow) 
+    
     plt.figure(figsize=size)
 
     # Plot the lines
@@ -88,12 +89,14 @@ def generateMASignalGraph(df, fast=50, slow=200, size=(12, 8)):
     plt.plot(df["Date"], df[f"MA{slow}"], color="blue", linewidth=0.5, label=f"MA{slow}")
 
     # Fill areas
-    plt.fill_between(df["Date"], df[f"MA{fast}"], df[f"MA{slow}"], where=(df[f"MA{fast}"] < df[f"MA{slow}"]), color="green", alpha=0.2, label="Bull (Up)")
-    plt.fill_between(df["Date"], df[f"MA{fast}"], df[f"MA{slow}"], where=(df[f"MA{fast}"] > df[f"MA{slow}"]), color="red", alpha=0.2, label="Bear (Down)")
+    plt.fill_between(df["Date"], df[f"MA{fast}"], df[f"MA{slow}"], 
+                     where=(df[f"MA{fast}"] < df[f"MA{slow}"]), color="red", alpha=0.2, label="Bear (Down)")
+    plt.fill_between(df["Date"], df[f"MA{fast}"], df[f"MA{slow}"], 
+                     where=(df[f"MA{fast}"] > df[f"MA{slow}"]), color="green", alpha=0.2, label="Bull (Up)")
 
     # Set Position Points
-    df["Buy"] = (df[f"MA{fast}"] > df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) <= df[f"MA{slow}"].shift(1))
-    df["Sell"] = (df[f"MA{fast}"] < df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) >= df[f"MA{slow}"].shift(1))
+    # df["Buy"] = (df[f"MA{fast}"] > df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) <= df[f"MA{slow}"].shift(1))
+    # df["Sell"] = (df[f"MA{fast}"] < df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) >= df[f"MA{slow}"].shift(1))
 
     # Plot Buy/Sell signals
     plt.scatter(df["Date"][df["Buy"]], df["Close"][df["Buy"]], marker="^", color="green", s=50, label="Buy-Position")
@@ -105,6 +108,7 @@ def generateMASignalGraph(df, fast=50, slow=200, size=(12, 8)):
     plt.legend()
     plt.grid()
     plt.show()
+
     
     return
 
@@ -114,13 +118,14 @@ def generateMulMASignalGraph(df, fast_periods=[50], slow_periods=[200], size=(12
     for fast in fast_periods:
         for slow in slow_periods:
             plt.figure(figsize=size)
+            df = generateMASignal(df)
             
             df[f"MA{fast}"] = df["Close"].rolling(window=fast).mean()
             df[f"MA{slow}"] = df["Close"].rolling(window=slow).mean()
             
             # Set Position points
-            df["Buy"] = (df[f"MA{fast}"] > df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) <= df[f"MA{slow}"].shift(1))
-            df["Sell"] = (df[f"MA{fast}"] < df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) >= df[f"MA{slow}"].shift(1))
+            # df["Buy"] = (df[f"MA{fast}"] > df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) <= df[f"MA{slow}"].shift(1))
+            # df["Sell"] = (df[f"MA{fast}"] < df[f"MA{slow}"]) & (df[f"MA{fast}"].shift(1) >= df[f"MA{slow}"].shift(1))
             
             # Fill the colour between
             plt.fill_between(df["Date"], df[f"MA{fast}"], df[f"MA{slow}"], where=(df[f"MA{fast}"] < df[f"MA{slow}"]), color="green", alpha=0.2, label="Bull (Up)")
