@@ -76,6 +76,39 @@ def strategyTest(df, initInv=100, fast=50, slow=200): # initInv stands for initi
     )
             
     return backtest_log
+
+def multipleParaStrategyTest(df, fasts=list(range(5, 101, 5)), slows=list(range(100, 501, 50))):
+    records = []
+    # fasts = list(range(5, 101, 5))
+    # slows = list(range(100, 501, 50))
+
+    # print(strategyTest(df=df, slow=5, fast=100))
+
+    for fast in fasts:
+        result = []  # Reset log
+
+        for slow in slows:
+            # print(f"fast: {fast}, slow: {slow}")
+            
+            result = strategyTest(df=df, slow=slow, fast=fast)
+
+            # Calculation
+            init_investment = result.iloc[0]["Balance $"]
+            final_value = result.iloc[-1]["Net"]
+            pct_change = (final_value - init_investment) / init_investment * 100
+            net = result.iloc[-1]["Net"]
+            exe_order = len(result) - 2
+            # print(init_investment)
+            # print(final_value)
+            # print(result)
+
+            # Store data in a list
+            records.append([fast, slow, net, pct_change, exe_order])
+
+    # Convert the list to a DataFrame once (efficient)
+    test_log = pd.DataFrame(records, columns=["Fast", "Slow", "Net", "Result%", "#Order"])
+    
+    return test_log
             
 def generateMASignalGraph(df, fast=50, slow=200, size=(12, 8)):
     df = df.copy()  # Prevent modify original DataFrame
@@ -104,7 +137,7 @@ def generateMASignalGraph(df, fast=50, slow=200, size=(12, 8)):
 
     plt.xlabel("Date")
     plt.ylabel("Price ($)")
-    plt.title(f"AAPL Price with MAs MA{fast}-MA{slow}")
+    plt.title(f"Price with MAs MA{fast}-MA{slow}")
     plt.legend()
     plt.grid()
     plt.show()
@@ -147,3 +180,40 @@ def generateMulMASignalGraph(df, fast_periods=[50], slow_periods=[200], size=(12
             plt.show()
     
     return
+
+def handle_splits(df, stock_symbol):
+    SPLITS = {
+        "AAPL": [("2020-08-31", 4), 
+                 ("2014-06-09", 7), 
+                 ("2005-02-28", 2), 
+                 ("2000-06-21", 2), 
+                 ("1987-06-16", 2)],
+        "AMZN": [("2022-06-06", 20), 
+                 ("1999-09-02", 2), 
+                 ("1999-01-05", 3), 
+                 ("1998-06-02", 2)],
+        "MSFT": [("2003-02-18", 2), 
+                 ("1999-03-29", 2), 
+                 ("1998-02-23", 2), 
+                 ("1996-12-09", 2), 
+                 ("1994-05-23", 2), 
+                 ("1992-06-15", 1.5), 
+                 ("1991-06-27", 1.5), 
+                 ("1987-09-21", 2)],
+        "NVDA": [("2024-06-10", 10), 
+                 ("2021-07-20", 4), 
+                 ("2007-09-11", 1.5)],
+        "TSLA": [("2022-08-25", 3), 
+                 ("2020-08-31", 5)]
+    }
+    
+    df = df.copy()
+    if stock_symbol not in SPLITS:
+        print(f"NO SPLIT DATA FOR {stock_symbol}")
+        return df
+    
+    for split_data, factor in SPLITS[stock_symbol]:
+        df.loc[df["Date"] < split_data, ["Close", "Open", "High", "Low"]] /= factor
+        df.loc[df["Date"] < split_data, ["Volume"]] *= factor
+    
+    return df
